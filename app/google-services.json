@@ -1,0 +1,113 @@
+{
+  "project_info": {
+    "project_number": "589398384385",
+    "project_id": "nodal-formula-326700",
+    "storage_bucket": "nodal-formula-326700.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:589398384385:android:a5620ea6496cd2ea04c500",
+        "android_client_info": {
+          "package_name": "com.example.android.eggtimernotifications"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "589398384385-opbg82lr13897s8l2b66fct5sprinatr.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBhLOrKnN1zzWms1D0ZoLio-CoHp9qWw5Y"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "589398384385-opbg82lr13897s8l2b66fct5sprinatr.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:589398384385:android:ab1ba025e09d546804c500",
+        "android_client_info": {
+          "package_name": "com.example.android.firebaseui_login_sample"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "589398384385-gf38hrh4krqkumkiiogrcheo6k7gr6u5.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.android.firebaseui_login_sample",
+            "certificate_hash": "ef7d3a7c465578e5ca620c8d7e4e1a304524dc24"
+          }
+        },
+        {
+          "client_id": "589398384385-opbg82lr13897s8l2b66fct5sprinatr.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBhLOrKnN1zzWms1D0ZoLio-CoHp9qWw5Y"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "589398384385-opbg82lr13897s8l2b66fct5sprinatr.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:589398384385:android:e7b94f77a408715604c500",
+        "android_client_info": {
+          "package_name": "com.udacity.project4"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "589398384385-4vorieotellc683ahmb054u3r60o00vq.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.udacity.project4",
+            "certificate_hash": "ef7d3a7c465578e5ca620c8d7e4e1a304524dc24"
+          }
+        },
+        {
+          "client_id": "589398384385-opbg82lr13897s8l2b66fct5sprinatr.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBhLOrKnN1zzWms1D0ZoLio-CoHp9qWw5Y"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "589398384385-opbg82lr13897s8l2b66fct5sprinatr.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
