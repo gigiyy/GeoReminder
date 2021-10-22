@@ -61,6 +61,7 @@ class ReminderListFragment : BaseFragment() {
                         requireActivity().applicationContext,
                         AuthenticationActivity::class.java
                     )
+                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                     startActivity(intent)
                 }
                 else -> Log.e(TAG, "User authentication state not supported")
