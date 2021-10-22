@@ -14,6 +14,8 @@ import android.view.*
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.databinding.DataBindingUtil
+import androidx.lifecycle.Observer
+import androidx.lifecycle.Transformations
 import androidx.navigation.fragment.findNavController
 import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.common.api.ResolvableApiException
@@ -39,6 +41,7 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
     //Use Koin to get the view model of the SaveReminder
     override val _viewModel: SaveReminderViewModel by inject()
     private lateinit var binding: FragmentSelectLocationBinding
+    private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
@@ -54,11 +57,7 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
 
         val mapFragment = childFragmentManager.findFragmentById(R.id.map) as SupportMapFragment?
         mapFragment?.getMapAsync(this)
-//        TODO: add the map setup implementation
-//        TODO: zoom to the user location after taking his permission
 //        TODO: add style to the map
-//        TODO: put a marker to location that the user selected
-
 
 //        TODO: call this function after the user confirms on the selected location
         onLocationSelected()
@@ -69,6 +68,13 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        Transformations.map(_viewModel.reminderSelectedLocationStr) {
+            !it.isNullOrEmpty()
+        }.observe(viewLifecycleOwner, Observer {
+            set_location_button.isEnabled = it
+        })
+
+        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(requireActivity())
         set_location_button.setOnClickListener {
             findNavController().popBackStack()
         }
@@ -104,12 +110,20 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
 
     override fun onMapReady(googleMap: GoogleMap) {
         map = googleMap
-        val sydney = LatLng(-34.0, 151.0)
-        googleMap.addMarker(MarkerOptions().position(sydney).title("Marker in Sydney"))
-        googleMap.moveCamera(CameraUpdateFactory.newLatLng(sydney))
 
         enableMyLocation()
         setMapLongClick(map)
+        setPoiClick(map)
+        zoomToCurrentLocation()
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun zoomToCurrentLocation() {
+        fusedLocationProviderClient.lastLocation.addOnSuccessListener {
+            val zoom = 18f
+            val homeLatLng = LatLng(it.latitude, it.longitude)
+            map.moveCamera(CameraUpdateFactory.newLatLngZoom(homeLatLng, zoom))
+        }
     }
 
     private fun isPermissionGranted(): Boolean = ContextCompat.checkSelfPermission(
@@ -120,6 +134,7 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
     private lateinit var map: GoogleMap
     private val REQUEST_LOCATION_PERMISSION = 1
     private lateinit var marker: Marker
+    private lateinit var poiMarker: Marker
 
     @SuppressLint("MissingPermission")
     private fun enableMyLocation() {
@@ -147,6 +162,11 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
         }
     }
 
+    private fun removeMarkers() {
+        if (this::marker.isInitialized) marker.remove()
+        if (this::poiMarker.isInitialized) poiMarker.remove()
+    }
+
     private fun setMapLongClick(map: GoogleMap) {
         map.setOnMapLongClickListener {
             val snippet = String.format(
@@ -158,11 +178,24 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
             _viewModel.latitude.value = it.latitude
             _viewModel.longitude.value = it.longitude
             _viewModel.reminderSelectedLocationStr.value = snippet
-            if (this::marker.isInitialized) marker.remove()
+            removeMarkers()
             marker = map.addMarker(
                 MarkerOptions().position(it).title(getString(R.string.dropped_pin)).snippet(snippet)
-                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE))
+                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_MAGENTA))
             )
+            marker.showInfoWindow()
         }
     }
+
+    private fun setPoiClick(map: GoogleMap) {
+        map.setOnPoiClickListener {
+            removeMarkers()
+            poiMarker = map.addMarker(MarkerOptions().position(it.latLng).title(it.name))
+            _viewModel.latitude.value = it.latLng.latitude
+            _viewModel.longitude.value = it.latLng.longitude
+            _viewModel.reminderSelectedLocationStr.value = it.name
+            poiMarker.showInfoWindow()
+        }
+    }
+
 }
