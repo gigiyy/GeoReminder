@@ -57,10 +57,6 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
 
         val mapFragment = childFragmentManager.findFragmentById(R.id.map) as SupportMapFragment?
         mapFragment?.getMapAsync(this)
-//        TODO: add style to the map
-
-//        TODO: call this function after the user confirms on the selected location
-        onLocationSelected()
 
         return binding.root
     }
@@ -68,22 +64,29 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        Transformations.map(_viewModel.reminderSelectedLocationStr) {
-            !it.isNullOrEmpty()
-        }.observe(viewLifecycleOwner, Observer {
-            set_location_button.isEnabled = it
+        Transformations.map(_viewModel.selectedPOI) { it != null }
+            .observe(viewLifecycleOwner, Observer {
+                set_location_button.isEnabled = it
+            })
+
+        _viewModel.selectedPOI.observe(viewLifecycleOwner, Observer {
+            set_location_button.isEnabled = true
         })
 
-        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(requireActivity())
+        fusedLocationProviderClient =
+            LocationServices.getFusedLocationProviderClient(requireActivity())
         set_location_button.setOnClickListener {
-            findNavController().popBackStack()
+            onLocationSelected()
         }
     }
 
     private fun onLocationSelected() {
-        //        TODO: When the user confirms on the selected location,
-        //         send back the selected location details to the view model
-        //         and navigate back to the previous fragment to save the reminder and add the geofence
+        _viewModel.selectedPOI.value?.let {
+            _viewModel.longitude.value = it.latLng.longitude
+            _viewModel.latitude.value = it.latLng.latitude
+            _viewModel.reminderSelectedLocationStr.value = it.name
+        }
+        findNavController().popBackStack()
     }
 
 
@@ -92,17 +95,20 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
     }
 
     override fun onOptionsItemSelected(item: MenuItem) = when (item.itemId) {
-        // TODO: Change the map type based on the user's selection.
         R.id.normal_map -> {
+            map.mapType = GoogleMap.MAP_TYPE_NORMAL
             true
         }
         R.id.hybrid_map -> {
+            map.mapType = GoogleMap.MAP_TYPE_HYBRID
             true
         }
         R.id.satellite_map -> {
+            map.mapType = GoogleMap.MAP_TYPE_SATELLITE
             true
         }
         R.id.terrain_map -> {
+            map.mapType = GoogleMap.MAP_TYPE_TERRAIN
             true
         }
         else -> super.onOptionsItemSelected(item)
@@ -112,8 +118,8 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
         map = googleMap
 
         enableMyLocation()
-        setMapLongClick(map)
         setPoiClick(map)
+        setMapStyle(map)
         zoomToCurrentLocation()
     }
 
@@ -133,7 +139,6 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
 
     private lateinit var map: GoogleMap
     private val REQUEST_LOCATION_PERMISSION = 1
-    private lateinit var marker: Marker
     private lateinit var poiMarker: Marker
 
     @SuppressLint("MissingPermission")
@@ -162,40 +167,32 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
         }
     }
 
-    private fun removeMarkers() {
-        if (this::marker.isInitialized) marker.remove()
-        if (this::poiMarker.isInitialized) poiMarker.remove()
-    }
-
-    private fun setMapLongClick(map: GoogleMap) {
-        map.setOnMapLongClickListener {
-            val snippet = String.format(
-                Locale.getDefault(),
-                "Lat: %1$.5f, Long: %2$.5f",
-                it.latitude,
-                it.longitude
-            )
-            _viewModel.latitude.value = it.latitude
-            _viewModel.longitude.value = it.longitude
-            _viewModel.reminderSelectedLocationStr.value = snippet
-            removeMarkers()
-            marker = map.addMarker(
-                MarkerOptions().position(it).title(getString(R.string.dropped_pin)).snippet(snippet)
-                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_MAGENTA))
-            )
-            marker.showInfoWindow()
-        }
-    }
-
     private fun setPoiClick(map: GoogleMap) {
         map.setOnPoiClickListener {
-            removeMarkers()
+            if (this::poiMarker.isInitialized) poiMarker.remove()
             poiMarker = map.addMarker(MarkerOptions().position(it.latLng).title(it.name))
-            _viewModel.latitude.value = it.latLng.latitude
-            _viewModel.longitude.value = it.latLng.longitude
-            _viewModel.reminderSelectedLocationStr.value = it.name
+            _viewModel.selectedPOI.value = it
             poiMarker.showInfoWindow()
         }
     }
 
+    private fun setMapStyle(map: GoogleMap) {
+        try {
+            val success = map.setMapStyle(
+                MapStyleOptions.loadRawResourceStyle(
+                    requireContext(),
+                    R.raw.map_style
+                )
+            )
+            if (!success) {
+                Log.e(TAG, "Style parsing failed.")
+            }
+        } catch (e: Resources.NotFoundException) {
+            Log.e(TAG, "can't find style. Error: ", e)
+        }
+    }
+
+    companion object {
+        private const val TAG = "SelectLocationFragment"
+    }
 }
