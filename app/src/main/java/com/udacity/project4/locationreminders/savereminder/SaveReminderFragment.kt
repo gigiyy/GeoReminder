@@ -82,7 +82,6 @@ class SaveReminderFragment : BaseFragment() {
 
             val reminder = ReminderDataItem(title, description, location, latitude, longitude)
             _viewModel.validateAndSaveReminder(reminder)
-            _viewModel.reminder.value = reminder
             checkPermissionsAndStartGeofencing()
         }
     }
@@ -246,22 +245,18 @@ class SaveReminderFragment : BaseFragment() {
                     .setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER)
                     .addGeofence(geofence).build()
 
-            geofencingClient.removeGeofences(geofencePendingIntent)?.run {
-                addOnCompleteListener {
-                    geofencingClient.addGeofences(geofencingRequest, geofencePendingIntent)?.run {
-                        addOnSuccessListener {
-                            Log.e("Add Geofence", geofence.requestId)
-                        }
-                        addOnFailureListener {
-                            Toast.makeText(
-                                requireContext(),
-                                R.string.geofences_not_added,
-                                Toast.LENGTH_SHORT
-                            ).show()
-                            if (it.message != null) {
-                                Log.w(TAG, it.message!!)
-                            }
-                        }
+            geofencingClient.addGeofences(geofencingRequest, geofencePendingIntent)?.run {
+                addOnSuccessListener {
+                    Log.e("Add Geofence", geofence.requestId)
+                }
+                addOnFailureListener {
+                    Toast.makeText(
+                        requireContext(),
+                        R.string.geofences_not_added,
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    if (it.message != null) {
+                        Log.w(TAG, it.message!!)
                     }
                 }
             }
