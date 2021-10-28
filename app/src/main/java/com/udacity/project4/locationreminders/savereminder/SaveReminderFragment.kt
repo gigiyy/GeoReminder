@@ -233,6 +233,7 @@ class SaveReminderFragment : BaseFragment() {
     @SuppressLint("MissingPermission")
     private fun addGeofenceForClue() {
         _viewModel.reminder.value?.let { reminder ->
+            Log.v(TAG, "add geofence for ${reminder.id}")
             val geofence = Geofence.Builder().setRequestId(reminder.id).setCircularRegion(
                 reminder.latitude!!,
                 reminder.longitude!!,

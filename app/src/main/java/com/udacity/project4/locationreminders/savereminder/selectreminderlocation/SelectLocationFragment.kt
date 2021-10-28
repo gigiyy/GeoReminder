@@ -63,15 +63,8 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        Transformations.map(_viewModel.selectedPOI) { it != null }
-            .observe(viewLifecycleOwner, Observer {
-                set_location_button.isEnabled = it
-            })
-
-        _viewModel.selectedPOI.observe(viewLifecycleOwner, Observer {
-            set_location_button.isEnabled = true
-        })
+        _viewModel.selectedPOI.value = null
+        set_location_button.isEnabled = false
 
         fusedLocationProviderClient =
             LocationServices.getFusedLocationProviderClient(requireActivity())
@@ -173,16 +166,14 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
             poiMarker = map.addMarker(MarkerOptions().position(it.latLng).title(it.name))
             _viewModel.selectedPOI.value = it
             poiMarker.showInfoWindow()
+            set_location_button.isEnabled = true
         }
     }
 
     private fun setMapStyle(map: GoogleMap) {
         try {
             val success = map.setMapStyle(
-                MapStyleOptions.loadRawResourceStyle(
-                    requireContext(),
-                    R.raw.map_style
-                )
+                MapStyleOptions.loadRawResourceStyle( requireContext(), R.raw.map_style )
             )
             if (!success) {
                 Log.e(TAG, "Style parsing failed.")
