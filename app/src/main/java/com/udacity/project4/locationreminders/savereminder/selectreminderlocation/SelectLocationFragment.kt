@@ -79,7 +79,7 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
             _viewModel.latitude.value = it.latLng.latitude
             _viewModel.reminderSelectedLocationStr.value = it.name
         }
-        findNavController().popBackStack()
+        _viewModel.navigationCommand.value = NavigationCommand.Back
     }
 
 
