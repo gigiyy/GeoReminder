@@ -62,4 +62,15 @@ class RemindersLocalRepositoryTest {
         assertThat(result.data.longitude, were(reminder.longitude))
         assertThat(result.data.id, were(reminder.id))
     }
+
+    @Test
+    fun getReminders_notFound() = runBlocking {
+        val reminder = ReminderDTO("title", "description", "location", 0.0, 1.0, "id1")
+        remindersLocalRepository.saveReminder(reminder)
+
+        val result = remindersLocalRepository.getReminder("id2")
+        assertThat(result, instanceOf(Result.Error::class.java))
+        result as Result.Error
+        assertThat(result.message, were("Reminder not found!"))
+    }
 }
