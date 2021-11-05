@@ -9,6 +9,7 @@ class FakeAndroidDataSource : ReminderDataSource {
     companion object {
         const val ERROR_MESSAGE = "Error Happened"
     }
+
     private var shouldReturnError = false
     private val reminders: LinkedHashMap<String, ReminderDTO> = LinkedHashMap()
 
@@ -25,7 +26,16 @@ class FakeAndroidDataSource : ReminderDataSource {
     }
 
     override suspend fun getReminder(id: String): Result<ReminderDTO> {
-        TODO("return the reminder with the id")
+        return if (shouldReturnError) {
+            Result.Error(ERROR_MESSAGE)
+        } else {
+            val result = reminders[id]
+            if (result == null) {
+                Result.Error("Reminder Not Found")
+            } else {
+                Result.Success(result)
+            }
+        }
     }
 
     override suspend fun deleteAllReminders() {
