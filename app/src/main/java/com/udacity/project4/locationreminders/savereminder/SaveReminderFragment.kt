@@ -3,6 +3,7 @@ package com.udacity.project4.locationreminders.savereminder
 import android.Manifest
 import android.annotation.SuppressLint
 import android.annotation.TargetApi
+import android.app.AlertDialog
 import android.app.PendingIntent
 import android.content.Intent
 import android.content.IntentSender
@@ -28,7 +29,6 @@ import com.udacity.project4.locationreminders.geofence.GeofenceBroadcastReceiver
 import com.udacity.project4.locationreminders.reminderslist.ReminderDataItem
 import com.udacity.project4.utils.setDisplayHomeAsUpEnabled
 import org.koin.androidx.viewmodel.ext.android.sharedViewModel
-import java.util.concurrent.TimeUnit
 
 class SaveReminderFragment : BaseFragment() {
     //Get the view model this time as a single to be shared with the another fragment
@@ -81,8 +81,10 @@ class SaveReminderFragment : BaseFragment() {
             val longitude = _viewModel.longitude.value
 
             val reminder = ReminderDataItem(title, description, location, latitude, longitude)
-            _viewModel.validateAndSaveReminder(reminder)
-            checkPermissionsAndStartGeofencing()
+            if (_viewModel.validateEnteredData(reminder)) {
+                _viewModel.reminder.value = reminder
+                checkPermissionsAndStartGeofencing()
+            }
         }
     }
 
@@ -120,17 +122,17 @@ class SaveReminderFragment : BaseFragment() {
             (requestCode == REQUEST_FOREGROUND_AND_BACKGROUND_PERMISSION_RESULT_CODE &&
                     grantResults[BACKGROUND_LOCATION_PERMISSION_INDEX] == PackageManager.PERMISSION_DENIED)
         ) {
-            Snackbar.make(
-                binding.saveReminderLayout,
-                R.string.permission_denied_explanation,
-                Snackbar.LENGTH_INDEFINITE
-            ).setAction(R.string.settings) {
-                startActivity(Intent().apply {
-                    action = Settings.ACTION_APPLICATION_DETAILS_SETTINGS
-                    data = Uri.fromParts("package", APPLICATION_ID, null)
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                })
-            }.show()
+            val builder = AlertDialog.Builder(requireActivity())
+                .setMessage(getString(R.string.permission_denied_explanation))
+                .setPositiveButton(android.R.string.ok, null)
+                .setNegativeButton(R.string.settings) { _, _ ->
+                    startActivity(Intent().apply {
+                        action = Settings.ACTION_APPLICATION_DETAILS_SETTINGS
+                        data = Uri.fromParts("package", APPLICATION_ID, null)
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                    })
+                }
+            builder.create().show()
         } else {
             checkDeviceLocationSettingsAndStartGeofence()
         }
@@ -163,9 +165,14 @@ class SaveReminderFragment : BaseFragment() {
         locationSettingsResponseTask.addOnFailureListener { e ->
             if (e is ResolvableApiException && resolve) {
                 try {
-                    e.startResolutionForResult(
-                        requireActivity(),
-                        REQUEST_TURN_DEVICE_LOCATION_ON
+                    startIntentSenderForResult(
+                        e.resolution.intentSender,
+                        REQUEST_TURN_DEVICE_LOCATION_ON,
+                        null,
+                        0,
+                        0,
+                        0,
+                        null
                     )
                 } catch (sendEx: IntentSender.SendIntentException) {
                     Log.d(TAG, "Error getting location settings resolution: " + sendEx.message)
@@ -181,7 +188,7 @@ class SaveReminderFragment : BaseFragment() {
         }
         locationSettingsResponseTask.addOnCompleteListener {
             if (it.isSuccessful) {
-                addGeofenceForClue()
+                startGeofencingForReminder()
             }
         }
     }
@@ -227,11 +234,11 @@ class SaveReminderFragment : BaseFragment() {
                 REQUEST_FOREGROUND_ONLY_PERMISSIONS_REQUEST_CODE
             }
         }
-        ActivityCompat.requestPermissions(requireActivity(), permissionArray, resultCode)
+        requestPermissions(permissionArray, resultCode)
     }
 
     @SuppressLint("MissingPermission")
-    private fun addGeofenceForClue() {
+    private fun startGeofencingForReminder() {
         Log.v(TAG, "Tried to add geofence")
         _viewModel.reminder.value?.let { reminder ->
             Log.v(TAG, "add geofence for ${reminder.id}")
@@ -239,7 +246,7 @@ class SaveReminderFragment : BaseFragment() {
                 reminder.latitude!!,
                 reminder.longitude!!,
                 GEOFENCE_RADIUS_IN_METERS
-            ).setExpirationDuration(GEOFENCE_EXPIRATION_IN_MILLISECONDS)
+            ).setExpirationDuration(Geofence.NEVER_EXPIRE)
                 .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER).build()
 
             val geofencingRequest =
@@ -249,7 +256,8 @@ class SaveReminderFragment : BaseFragment() {
 
             geofencingClient.addGeofences(geofencingRequest, geofencePendingIntent)?.run {
                 addOnSuccessListener {
-                    Log.e("Add Geofence", geofence.requestId)
+                    Log.e("Added Geofence", geofence.requestId)
+                    _viewModel.saveReminder(reminder)
                 }
                 addOnFailureListener {
                     Toast.makeText(
@@ -274,4 +282,3 @@ private const val APPLICATION_ID = "com.udacity.project4"
 private const val LOCATION_PERMISSION_INDEX = 0
 private const val BACKGROUND_LOCATION_PERMISSION_INDEX = 1
 private const val GEOFENCE_RADIUS_IN_METERS = 100f
-private val GEOFENCE_EXPIRATION_IN_MILLISECONDS: Long = TimeUnit.DAYS.toMillis(1)

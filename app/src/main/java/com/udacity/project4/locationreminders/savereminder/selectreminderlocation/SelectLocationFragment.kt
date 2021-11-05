@@ -111,9 +111,11 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
     @SuppressLint("MissingPermission")
     private fun zoomToCurrentLocation() {
         fusedLocationProviderClient.lastLocation.addOnSuccessListener {
-            val zoom = 18f
-            val homeLatLng = LatLng(it.latitude, it.longitude)
-            map.moveCamera(CameraUpdateFactory.newLatLngZoom(homeLatLng, zoom))
+            it?.let {
+                val zoom = 18f
+                val homeLatLng = LatLng(it.latitude, it.longitude)
+                map.moveCamera(CameraUpdateFactory.newLatLngZoom(homeLatLng, zoom))
+            }
         }
     }
 
@@ -151,8 +153,8 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
             } else {
                 Snackbar.make(
                     binding.root,
-                    R.string.location_required_error,
-                    Snackbar.LENGTH_INDEFINITE
+                    getString(R.string.map_location_access_denied),
+                    Snackbar.LENGTH_SHORT
                 ).setAction(android.R.string.ok) {
                     Log.v(TAG, "user denied location permission")
                 }.show()
