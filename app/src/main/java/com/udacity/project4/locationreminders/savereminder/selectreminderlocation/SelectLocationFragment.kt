@@ -16,10 +16,7 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
-import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.MapStyleOptions
-import com.google.android.gms.maps.model.Marker
-import com.google.android.gms.maps.model.MarkerOptions
+import com.google.android.gms.maps.model.*
 import com.google.android.material.snackbar.Snackbar
 import com.udacity.project4.R
 import com.udacity.project4.base.BaseFragment
@@ -29,6 +26,7 @@ import com.udacity.project4.locationreminders.savereminder.SaveReminderViewModel
 import com.udacity.project4.utils.setDisplayHomeAsUpEnabled
 import kotlinx.android.synthetic.main.fragment_select_location.*
 import org.koin.androidx.viewmodel.ext.android.sharedViewModel
+import java.util.*
 
 class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
 
@@ -105,6 +103,7 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
         map = googleMap
 
         enableMyLocation()
+        setMapLongClick(map)
         setPoiClick(map)
         setMapStyle(map)
     }
@@ -158,6 +157,25 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
                     Log.v(TAG, "user denied location permission")
                 }.show()
             }
+        }
+    }
+
+    private fun setMapLongClick(map: GoogleMap) {
+        map.setOnMapLongClickListener {
+            val snippet = String.format(
+                Locale.getDefault(),
+                getString(R.string.lat_long_snippet),
+                it.latitude,
+                it.longitude
+            )
+            if (this::poiMarker.isInitialized) poiMarker.remove()
+            poiMarker = map.addMarker(
+                MarkerOptions().position(it).title(getString(R.string.dropped_pin)).snippet(snippet)
+                    .icon(BitmapDescriptorFactory.defaultMarker())
+            )
+            _viewModel.selectedPOI.value = PointOfInterest(it, snippet, snippet)
+            poiMarker.showInfoWindow()
+            set_location_button.isEnabled = true
         }
     }
 
