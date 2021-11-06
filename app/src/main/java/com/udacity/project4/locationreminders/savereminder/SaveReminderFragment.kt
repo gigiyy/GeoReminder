@@ -3,6 +3,7 @@ package com.udacity.project4.locationreminders.savereminder
 import android.Manifest
 import android.annotation.SuppressLint
 import android.annotation.TargetApi
+import android.app.Activity
 import android.app.AlertDialog
 import android.app.PendingIntent
 import android.content.Intent
@@ -102,7 +103,14 @@ class SaveReminderFragment : BaseFragment() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == REQUEST_TURN_DEVICE_LOCATION_ON) {
-            checkDeviceLocationSettingsAndStartGeofence(false)
+            // due to known issue https://knowledge.udacity.com/questions/735755
+            // will call startGeofencingForReminder() directly when user enabled the location service
+            // however adding geofence itself might fail, since it's not ready yet.
+            if (resultCode == Activity.RESULT_OK) {
+                startGeofencingForReminder()
+            } else {
+                checkDeviceLocationSettingsAndStartGeofence(false)
+            }
         }
     }
 
@@ -163,6 +171,9 @@ class SaveReminderFragment : BaseFragment() {
         val settingsClient = LocationServices.getSettingsClient(requireContext())
         val locationSettingsResponseTask = settingsClient.checkLocationSettings(builder.build())
         locationSettingsResponseTask.addOnFailureListener { e ->
+            if (e.message != null) {
+                Log.e(TAG, e.message!!)
+            }
             if (e is ResolvableApiException && resolve) {
                 try {
                     startIntentSenderForResult(
@@ -257,7 +268,7 @@ class SaveReminderFragment : BaseFragment() {
             geofencingClient.addGeofences(geofencingRequest, geofencePendingIntent)?.run {
                 addOnSuccessListener {
                     Log.e("Added Geofence", geofence.requestId)
-                    _viewModel.saveReminder(reminder)
+                    _viewModel.validateAndSaveReminder(reminder)
                 }
                 addOnFailureListener {
                     Toast.makeText(
